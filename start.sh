@@ -62,13 +62,13 @@ fi
 # We store the running docker container's ID into the temporary file `.tmp_tc_name`
 # so that we can remember it through subshells and in case something goes wrong
 # and the docker container isn't stopped (i.e. Ctrl-C during running tests.)
-DOCKER_CMD=""
-DOCKER_CMD+="docker run -d --rm --net=host -v $(pwd)/ceph:/etc/ceph "
-DOCKER_CMD+="-e CEPH_PUBLIC_NETWORK=${DOCKER0_SUBNET} "
-DOCKER_CMD+="-e MON_IP=127.0.0.1 "
-DOCKER_CMD+="--entrypoint=/preentry.sh ${DOCKER_CONTAINER}"
+# DOCKER_CMD=""
+# DOCKER_CMD+="docker run -d --rm --net=host -v $(pwd)/ceph:/etc/ceph "
+# DOCKER_CMD+="-e CEPH_PUBLIC_NETWORK=${DOCKER0_SUBNET} "
+# DOCKER_CMD+="-e MON_IP=127.0.0.1 "
+# DOCKER_CMD+="--entrypoint=/preentry.sh ${DOCKER_CONTAINER}"
 
-$DOCKER_CMD > .tmp_tc_name
+docker run -d --rm --net=host -v $(pwd)/ceph:/etc/ceph -e CEPH_PUBLIC_NETWORK=$DOCKER0_SUBNET -e MON_IP=127.0.0.1 --entrypoint=/preentry.sh $DOCKER_CONTAINER > .tmp_tc_name
 
 echo "Started Ceph demo container: $(cat .tmp_tc_name)"
 echo "Waiting for Ceph demo container to be ready for tests..."
@@ -78,6 +78,16 @@ echo "Waiting for Ceph demo container to be ready for tests..."
 echo "Attempting to fix permissions on ceph/ceph/client.admin.keyring from inside the container..."
 
 # The devil's permissions for a total hack
-docker exec $(cat .tmp_tc_name) chmod 666 /etc/ceph/ceph.client.admin.keyring
+if docker exec $(cat .tmp_tc_name) chmod 666 /etc/ceph/ceph.client.admin.keyring ; then
+	echo "Success."
+else
+	echo "Failed to access container!"
+	echo "The command run was: "
+	echo ""
+	echo "docker run -d --rm --net=host -v $(pwd)/ceph:/etc/ceph -e CEPH_PUBLIC_NETWORK=${DOCKER0_SUBNET} -e MON_IP=127.0.0.1 --entrypoint=/preentry.sh ${DOCKER_CONTAINER}"
+	echo ""
+	echo "Retrying verbosely (no -d for detach)..."
+	echo ""
 
-echo "Done."
+	docker run --rm --net=host -v $(pwd)/ceph:/etc/ceph -e CEPH_PUBLIC_NETWORK=$DOCKER0_SUBNET -e MON_IP=127.0.0.1 --entrypoint=/preentry.sh $DOCKER_CONTAINER
+fi

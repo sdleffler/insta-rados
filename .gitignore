@@ -1,0 +1,4 @@
+ceph/*
+container/*
+.*.swp
+.tmp_tc_name
