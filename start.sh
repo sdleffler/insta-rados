@@ -80,6 +80,8 @@ echo "Attempting to fix permissions on ceph/ceph/client.admin.keyring from insid
 # The devil's permissions for a total hack
 if docker exec $(cat .tmp_tc_name) chmod 666 /etc/ceph/ceph.client.admin.keyring ; then
 	echo "Success."
+
+	exit 0
 else
 	echo "Failed to access container!"
 	echo "The command run was: "
@@ -90,4 +92,6 @@ else
 	echo ""
 
 	docker run --rm --net=host -v $(pwd)/ceph:/etc/ceph -e CEPH_PUBLIC_NETWORK=$DOCKER0_SUBNET -e MON_IP=127.0.0.1 --entrypoint=/preentry.sh $DOCKER_CONTAINER
+
+	exit 1
 fi
